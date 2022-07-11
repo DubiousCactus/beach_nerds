@@ -20,9 +20,9 @@ torch.manual_seed(42)
 
 # Constant variables
 BATCH_SIZE = 32
-NUM_EPOCHS = 1
-IMG_SIZE = 256
-VAL_MAP_FREQ = 1
+NUM_EPOCHS = 50
+IMG_SIZE = 512
+VAL_MAP_FREQ = 5
 
 # Fix the random crashes due to multiprocessing
 import resource
