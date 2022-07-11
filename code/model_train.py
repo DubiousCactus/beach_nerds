@@ -179,17 +179,18 @@ def main(args):
             tb.add_scalar("eval/visum_score", visum_score, epoch)
 
         if loss < last_loss:
+            file_name = f"visum2022_{loss:04f}.pt"
             torch.save(
                 {
                     "epoch": epoch,
                     "model_state_dict": model.state_dict(),
                     "optimizer_state_dict": optimizer.state_dict(),
                 },
-                os.path.join(SAVE_MODEL_DIR, f"visum2022_{loss:04f}.pt"),
+                os.path.join(SAVE_MODEL_DIR, file_name),
             )
             last_loss = loss
-
-        print(f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, 'visum2022.pt')}")
+            print("[*] New best loss!")
+            print(f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, file_name)}")
 
 
     print("Finished.")
