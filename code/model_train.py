@@ -26,7 +26,7 @@ def main(args):
     NUM_EPOCHS = args.epochs
     IMG_SIZE = args.img_size
     VAL_MAP_FREQ = args.val_every
-    last_loss = float("+inf")
+    last_score = .0
 
     # Fix the random crashes due to multiprocessing
     import resource
@@ -187,21 +187,21 @@ def main(args):
             tb.add_scalar("eval/segm_map", segm_map, epoch)
             tb.add_scalar("eval/visum_score", visum_score, epoch)
 
-        if loss < last_loss:
-            file_name = f"visum2022_{loss:04f}.pt"
-            torch.save(
-                {
-                    "epoch": epoch,
-                    "model_state_dict": model.state_dict(),
-                    "optimizer_state_dict": optimizer.state_dict(),
-                },
-                os.path.join(SAVE_MODEL_DIR, file_name),
-            )
-            last_loss = loss
-            print("[*] New best loss!")
-            print(
-                f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, file_name)}"
-            )
+            if visum_score > last_score:
+                file_name = f"visum2022_score-{visum_score:06f}.pt"
+                torch.save(
+                    {
+                        "epoch": epoch,
+                        "model_state_dict": model.state_dict(),
+                        "optimizer_state_dict": optimizer.state_dict(),
+                    },
+                    os.path.join(SAVE_MODEL_DIR, file_name),
+                )
+                last_score = visum_score
+                print("[*] New best loss!")
+                print(
+                    f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, file_name)}"
+                )
 
     print("Finished.")
 
