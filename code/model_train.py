@@ -26,6 +26,7 @@ def main(args):
     NUM_EPOCHS = args.epochs
     IMG_SIZE = args.img_size
     VAL_MAP_FREQ = args.val_every
+    last_loss = float("+inf")
 
     # Fix the random crashes due to multiprocessing
     import resource
@@ -90,7 +91,8 @@ def main(args):
 
     # Define an optimizer
     model_params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(model_params, lr=0.005, momentum=0.9, weight_decay=0.0005)
+    optimizer = torch.optim.AdamW(model_params, lr=0.001)
+    # optimizer = torch.optim.SGD(model_params, lr=0.005, momentum=0.9, weight_decay=0.0005)
 
 
     # Start the training and validation loops
@@ -141,12 +143,13 @@ def main(args):
             optimizer.step()
 
         # Print loss values
+        loss = np.sum(losses_) / len(train_set)
         print(f"Loss Classifier: {np.sum(losses_classifier) / len(train_set)}")
         print(f"Loss Box Regression: {np.sum(losses_box_reg) / len(train_set)}")
         print(f"Loss Mask: {np.sum(losses_mask) / len(train_set)}")
         print(f"Loss Objectness: {np.sum(losses_objectness) / len(train_set)}")
         print(f"Loss RPN Box Regression: {np.sum(losses_rpn_box_reg) / len(train_set)}")
-        print(f"Loss: {np.sum(losses_) / len(train_set)}")
+        print(f"Loss: {loss}")
 
         # Print loss values in tensorboard
         tb.add_scalar("loss/clf", np.sum(losses_classifier) / len(train_set), epoch)
@@ -175,14 +178,16 @@ def main(args):
             tb.add_scalar("eval/segm_map", segm_map, epoch)
             tb.add_scalar("eval/visum_score", visum_score, epoch)
 
-        torch.save(
-            {
-                "epoch": epoch,
-                "model_state_dict": model.state_dict(),
-                "optimizer_state_dict": optimizer.state_dict(),
-            },
-            os.path.join(SAVE_MODEL_DIR, "visum2022.pt"),
-        )
+        if loss < last_loss:
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                },
+                os.path.join(SAVE_MODEL_DIR, f"visum2022_{loss:04d}.pt"),
+            )
+            last_loss = loss
 
         print(f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, 'visum2022.pt')}")
 
