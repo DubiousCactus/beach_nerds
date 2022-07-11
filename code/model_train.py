@@ -185,7 +185,7 @@ def main(args):
                     "model_state_dict": model.state_dict(),
                     "optimizer_state_dict": optimizer.state_dict(),
                 },
-                os.path.join(SAVE_MODEL_DIR, f"visum2022_{loss:04d}.pt"),
+                os.path.join(SAVE_MODEL_DIR, f"visum2022_{loss:04f}.pt"),
             )
             last_loss = loss
 
