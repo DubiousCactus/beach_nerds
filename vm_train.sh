@@ -7,4 +7,4 @@
 #
 
 
-source venv/bin/activate && python code/model_train.py
+python code/model_train.py
