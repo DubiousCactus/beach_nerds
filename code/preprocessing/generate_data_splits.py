@@ -2,11 +2,10 @@
 import os
 import json
 import tqdm
-import numpy as np 
+import numpy as np
 
 # Sklearn Imports
 from sklearn.model_selection import train_test_split
-
 
 
 # Directories and Files
@@ -15,7 +14,7 @@ json_file = os.path.join(data, "json", "good_quality_imgs.json")
 
 
 # Open JSON file
-with open(json_file, 'r') as j:
+with open(json_file, "r") as j:
 
     # Load JSON contents
     json_data = json.loads(j.read())
@@ -24,15 +23,16 @@ print(f"Number of images in JSON: {len(json_data)}")
 
 
 # Read the raw-files directory
-raw_images = [i for i in os.listdir(os.path.join(data, "raw")) if not i.startswith('.')]
+raw_images = [i for i in os.listdir(os.path.join(data, "raw")) if not i.startswith(".")]
 print(f"Number of images in the folder: {len(raw_images)}")
-
 
 
 # Divide data into train and test...
 # ... since train will be anonimised, but test won't
 _y = np.zeros_like(np.array(raw_images))
-train_images, test_images, _, _ = train_test_split(raw_images, _y, test_size=0.30, random_state=42)
+train_images, test_images, _, _ = train_test_split(
+    raw_images, _y, test_size=0.30, random_state=42
+)
 print(f"Shape of train subset: {np.shape(train_images)}")
 print(f"Shape of test subset: {np.shape(test_images)}")
 
@@ -43,11 +43,18 @@ test_dict = dict()
 
 
 # Iterate through subsets and the corresponding data dictionary
-for subset, subset_dict, split in zip([train_images, test_images], [train_dict, test_dict], ["train", "test"]):
+for subset, subset_dict, split in zip(
+    [train_images, test_images], [train_dict, test_dict], ["train", "test"]
+):
 
     # Go through the images of the subset
     for image_filename in tqdm.tqdm(subset):
-        subset_dict[image_filename] = {"barcode":list(), "invoice":list(), "recipient":list(), "sender":list()}
+        subset_dict[image_filename] = {
+            "barcode": list(),
+            "invoice": list(),
+            "recipient": list(),
+            "sender": list(),
+        }
 
         # Get data from JSON
         annotations = json_data[image_filename]
@@ -71,7 +78,6 @@ for subset, subset_dict, split in zip([train_images, test_images], [train_dict, 
         senders = annotations["sender"]
         for coords_list in senders:
             subset_dict[image_filename]["sender"].append(coords_list)
-    
 
     # Convert this information into JSON and dump it to a file
     json_object = json.dumps(subset_dict, indent=4)
@@ -82,7 +88,6 @@ for subset, subset_dict, split in zip([train_images, test_images], [train_dict, 
 
     with open(os.path.join(data, "json", f"{split}.json"), "w") as j:
         j.write(json_object)
-
 
 
 print("Finished")

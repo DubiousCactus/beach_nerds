@@ -18,7 +18,6 @@ from model_utilities import LoggiBarcodeDetectionModel, evaluate, visum2022score
 torch.manual_seed(42)
 
 
-
 # Constant variables
 BATCH_SIZE = 1
 NUM_EPOCHS = 1
@@ -36,8 +35,16 @@ tb = SummaryWriter(log_dir="results/tensorboard", flush_secs=10)
 
 # Prepare data
 # First, we create two train sets with different transformations (we will use the one w/out transforms as validation set)
-dataset = LoggiPackageDataset(data_dir=DATA_DIR, training=True, transforms=get_transform(data_augment=True, img_size=IMG_SIZE))
-dataset_notransforms = LoggiPackageDataset(data_dir=DATA_DIR, training=True, transforms=get_transform(data_augment=False, img_size=IMG_SIZE))
+dataset = LoggiPackageDataset(
+    data_dir=DATA_DIR,
+    training=True,
+    transforms=get_transform(data_augment=True, img_size=IMG_SIZE),
+)
+dataset_notransforms = LoggiPackageDataset(
+    data_dir=DATA_DIR,
+    training=True,
+    transforms=get_transform(data_augment=False, img_size=IMG_SIZE),
+)
 
 # Split the dataset into train and validation sets
 indices = torch.randperm(len(dataset)).tolist()
@@ -48,10 +55,14 @@ val_set = torch.utils.data.Subset(dataset_notransforms, indices[-299:])
 
 # DataLoaders
 # Train loader
-train_loader = torch.utils.data.DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, collate_fn=collate_fn)
+train_loader = torch.utils.data.DataLoader(
+    train_set, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, collate_fn=collate_fn
+)
 
 # Validation loader
-val_loader = torch.utils.data.DataLoader(val_set, batch_size=BATCH_SIZE, shuffle=False, num_workers=4, collate_fn=collate_fn)
+val_loader = torch.utils.data.DataLoader(
+    val_set, batch_size=BATCH_SIZE, shuffle=False, num_workers=4, collate_fn=collate_fn
+)
 
 
 # Define DEVICE (GPU or CPU)
@@ -97,8 +108,10 @@ for epoch in range(NUM_EPOCHS):
 
         # Load data
         images = [image.to(DEVICE) for image in images]
-        targets_ = [{k: v.to(DEVICE) for k, v in t.items()
-                     if k != 'image_fname'} for t in targets]
+        targets_ = [
+            {k: v.to(DEVICE) for k, v in t.items() if k != "image_fname"}
+            for t in targets
+        ]
 
         # Compute loss
         loss_dict = model(images, targets_)
@@ -106,11 +119,11 @@ for epoch in range(NUM_EPOCHS):
         loss_value = losses.item()
 
         # Save loss values
-        losses_classifier.append(loss_dict['loss_classifier'].item())
-        losses_box_reg.append(loss_dict['loss_box_reg'].item())
-        losses_mask.append(loss_dict['loss_mask'].item())
-        losses_objectness.append(loss_dict['loss_objectness'].item())
-        losses_rpn_box_reg.append(loss_dict['loss_rpn_box_reg'].item())
+        losses_classifier.append(loss_dict["loss_classifier"].item())
+        losses_box_reg.append(loss_dict["loss_box_reg"].item())
+        losses_mask.append(loss_dict["loss_mask"].item())
+        losses_objectness.append(loss_dict["loss_objectness"].item())
+        losses_rpn_box_reg.append(loss_dict["loss_rpn_box_reg"].item())
         losses_.append(loss_value)
 
         # Optimise models parameters
@@ -123,29 +136,22 @@ for epoch in range(NUM_EPOCHS):
     print(f"Loss Box Regression: {np.sum(losses_box_reg) / len(train_set)}")
     print(f"Loss Mask: {np.sum(losses_mask) / len(train_set)}")
     print(f"Loss Objectness: {np.sum(losses_objectness) / len(train_set)}")
-    print(
-        f"Loss RPN Box Regression: {np.sum(losses_rpn_box_reg) / len(train_set)}")
+    print(f"Loss RPN Box Regression: {np.sum(losses_rpn_box_reg) / len(train_set)}")
     print(f"Loss: {np.sum(losses_) / len(train_set)}")
 
     # Print loss values in tensorboard
-    tb.add_scalar('loss/clf', np.sum(
-        losses_classifier) / len(train_set), epoch)
-    tb.add_scalar('loss/boxreg', np.sum(
-        losses_box_reg) / len(train_set), epoch)
-    tb.add_scalar('loss/mask', np.sum(
-        losses_mask) / len(train_set), epoch)
-    tb.add_scalar('loss/obj', np.sum(
-        losses_objectness) / len(train_set), epoch)
-    tb.add_scalar('loss/rpn', np.sum(
-        losses_rpn_box_reg) / len(train_set), epoch)
-    tb.add_scalar('loss/total_loss', np.sum(
-        losses_) / len(train_set), epoch)
+    tb.add_scalar("loss/clf", np.sum(losses_classifier) / len(train_set), epoch)
+    tb.add_scalar("loss/boxreg", np.sum(losses_box_reg) / len(train_set), epoch)
+    tb.add_scalar("loss/mask", np.sum(losses_mask) / len(train_set), epoch)
+    tb.add_scalar("loss/obj", np.sum(losses_objectness) / len(train_set), epoch)
+    tb.add_scalar("loss/rpn", np.sum(losses_rpn_box_reg) / len(train_set), epoch)
+    tb.add_scalar("loss/total_loss", np.sum(losses_) / len(train_set), epoch)
 
     if ((epoch + 1) % VAL_MAP_FREQ == 0) or (epoch == NUM_EPOCHS - 1):
         # Validation Phase
         eval_results = evaluate(model, val_loader, DEVICE)
-        bbox_results = eval_results.coco_eval['bbox']
-        segm_results = eval_results.coco_eval['segm']
+        bbox_results = eval_results.coco_eval["bbox"]
+        segm_results = eval_results.coco_eval["segm"]
         bbox_map = bbox_results.stats[0]
         segm_map = segm_results.stats[0]
         visum_score = visum2022score(bbox_map, segm_map)
@@ -156,19 +162,20 @@ for epoch in range(NUM_EPOCHS):
         print(f"VISUM Score: {np.round(visum_score, 4)}")
 
         # Print mAP values in tensorboard
-        tb.add_scalar('eval/bbox_map', bbox_map, epoch)
-        tb.add_scalar('eval/segm_map', segm_map, epoch)
-        tb.add_scalar('eval/visum_score', visum_score, epoch)
+        tb.add_scalar("eval/bbox_map", bbox_map, epoch)
+        tb.add_scalar("eval/segm_map", segm_map, epoch)
+        tb.add_scalar("eval/visum_score", visum_score, epoch)
 
-    torch.save({
-        'epoch': epoch,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-    }, os.path.join(
-        SAVE_MODEL_DIR, "visum2022.pt"))
+    torch.save(
+        {
+            "epoch": epoch,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+        },
+        os.path.join(SAVE_MODEL_DIR, "visum2022.pt"),
+    )
 
-    print(
-        f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, 'visum2022.pt')}")
+    print(f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, 'visum2022.pt')}")
 
 
 print("Finished.")

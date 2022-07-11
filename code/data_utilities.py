@@ -15,8 +15,9 @@ from torchvision.transforms import functional as F
 # Torchvision Utils Source Code
 # Source: https://pytorch.org/vision/stable/_modules/torchvision/utils.html
 
+
 def _generate_color_palette(num_objects: int):
-    palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
+    palette = torch.tensor([2**25 - 1, 2**15 - 1, 2**21 - 1])
     return [tuple((i * palette) % 255) for i in range(num_objects)]
 
 
@@ -25,8 +26,9 @@ def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
     labels: Optional[List[str]] = None,
-    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]],
-                           str, Tuple[int, int, int]]] = None,
+    colors: Optional[
+        Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]
+    ] = None,
     fill: Optional[bool] = False,
     width: int = 1,
     font: Optional[str] = None,
@@ -71,7 +73,8 @@ def draw_bounding_boxes(
 
     if labels is None:
         labels: Union[List[str], List[None]] = [
-            None] * num_boxes  # type: ignore[no-redef]
+            None
+        ] * num_boxes  # type: ignore[no-redef]
     elif len(labels) != num_boxes:
         raise ValueError(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
@@ -82,12 +85,15 @@ def draw_bounding_boxes(
     elif isinstance(colors, list):
         if len(colors) < num_boxes:
             raise ValueError(
-                f"Number of colors ({len(colors)}) is less than number of boxes ({num_boxes}). ")
+                f"Number of colors ({len(colors)}) is less than number of boxes ({num_boxes}). "
+            )
     else:  # colors specifies a single color for all boxes
         colors = [colors] * num_boxes
 
-    colors = [(ImageColor.getrgb(color) if isinstance(
-        color, str) else color) for color in colors]
+    colors = [
+        (ImageColor.getrgb(color) if isinstance(color, str) else color)
+        for color in colors
+    ]
 
     # Handle Grayscale images
     if image.size(0) == 1:
@@ -102,8 +108,11 @@ def draw_bounding_boxes(
     else:
         draw = ImageDraw.Draw(img_to_draw)
 
-    txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(
-        font=font, size=font_size)
+    txt_font = (
+        ImageFont.load_default()
+        if font is None
+        else ImageFont.truetype(font=font, size=font_size)
+    )
 
     # type: ignore[arg-type]
     for bbox, color, label in zip(img_boxes, colors, labels):
@@ -115,10 +124,13 @@ def draw_bounding_boxes(
 
         if label is not None:
             margin = width + 1
-            draw.text((bbox[0] + margin, bbox[1] + margin),
-                      label, fill=color, font=txt_font)
+            draw.text(
+                (bbox[0] + margin, bbox[1] + margin), label, fill=color, font=txt_font
+            )
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+    return (
+        torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+    )
 
 
 @torch.no_grad()
@@ -126,8 +138,9 @@ def draw_segmentation_masks(
     image: torch.Tensor,
     masks: torch.Tensor,
     alpha: float = 0.8,
-    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]],
-                           str, Tuple[int, int, int]]] = None,
+    colors: Optional[
+        Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]
+    ] = None,
 ) -> torch.Tensor:
     """
     Draws segmentation masks on given RGB image.
@@ -154,8 +167,7 @@ def draw_segmentation_masks(
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
-        raise ValueError(
-            "Pass an RGB image. Other Image formats are not supported")
+        raise ValueError("Pass an RGB image. Other Image formats are not supported")
     if masks.ndim == 2:
         masks = masks[None, :, :]
     if masks.ndim != 3:
@@ -163,13 +175,13 @@ def draw_segmentation_masks(
     if masks.dtype != torch.bool:
         raise ValueError(f"The masks must be of dtype bool. Got {masks.dtype}")
     if masks.shape[-2:] != image.shape[-2:]:
-        raise ValueError(
-            "The image and the masks must have the same height and width")
+        raise ValueError("The image and the masks must have the same height and width")
 
     num_masks = masks.size()[0]
     if colors is not None and num_masks > len(colors):
         raise ValueError(
-            f"There are more masks ({num_masks}) than colors ({len(colors)})")
+            f"There are more masks ({num_masks}) than colors ({len(colors)})"
+        )
 
     if colors is None:
         colors = _generate_color_palette(num_masks)
@@ -177,11 +189,11 @@ def draw_segmentation_masks(
     if not isinstance(colors, list):
         colors = [colors]
     if not isinstance(colors[0], (tuple, str)):
-        raise ValueError(
-            "colors must be a tuple or a string, or a list thereof")
+        raise ValueError("colors must be a tuple or a string, or a list thereof")
     if isinstance(colors[0], tuple) and len(colors[0]) != 3:
         raise ValueError(
-            "It seems that you passed a tuple of colors instead of a list of colors")
+            "It seems that you passed a tuple of colors instead of a list of colors"
+        )
 
     out_dtype = torch.uint8
 
@@ -211,8 +223,12 @@ def convert_bbox_to_coco(bbox, reverse=False):
     if not reverse:
         # Our notation has the format [x, y, x+w, y+h]
         # In COCO, the notation has the format [x_min, y_min, width, height]
-        x_min, y_min, width, height = bbox[0], bbox[1], (
-            bbox[2] - bbox[0]), (bbox[3] - bbox[1])
+        x_min, y_min, width, height = (
+            bbox[0],
+            bbox[1],
+            (bbox[2] - bbox[0]),
+            (bbox[3] - bbox[1]),
+        )
 
         # We then create a list with these entries
         converted_bbox = [x_min, y_min, width, height]
@@ -239,21 +255,24 @@ def get_transform(data_augment, img_size):
 
     # Assert conditions
     assert data_augment in (
-        True, False), f"The 'data_augment' parameter should be a boolean (True, False). You entered {data_augment}."
+        True,
+        False,
+    ), f"The 'data_augment' parameter should be a boolean (True, False). You entered {data_augment}."
 
     # Initialise transforms to None
     transforms = None
 
     if data_augment:
-        transforms = A.Compose([
-            A.HorizontalFlip(p=0.5),
-            A.Resize(img_size, img_size)
-        ], bbox_params=A.BboxParams(format='coco', label_fields=['bbox_classes']))
+        transforms = A.Compose(
+            [A.HorizontalFlip(p=0.5), A.Resize(img_size, img_size)],
+            bbox_params=A.BboxParams(format="coco", label_fields=["bbox_classes"]),
+        )
 
     else:
-        transforms = A.Compose([
-            A.Resize(img_size, img_size)
-        ], bbox_params=A.BboxParams(format='coco', label_fields=['bbox_classes']))
+        transforms = A.Compose(
+            [A.Resize(img_size, img_size)],
+            bbox_params=A.BboxParams(format="coco", label_fields=["bbox_classes"]),
+        )
 
     return transforms
 
@@ -268,8 +287,7 @@ def draw_results(image, masks, bboxes, scores=None):
     masks = torch.as_tensor(masks, dtype=torch.bool)
 
     # Get image with mask on top
-    image_w_mask = draw_segmentation_masks(
-        image=image, masks=masks, alpha=0.5)
+    image_w_mask = draw_segmentation_masks(image=image, masks=masks, alpha=0.5)
 
     # Now, let's design the bounding boxes
     # The values of the input image should be uint8 between 0 and 255
@@ -282,8 +300,7 @@ def draw_results(image, masks, bboxes, scores=None):
     bboxes = torch.as_tensor(bboxes, dtype=torch.float32)
 
     # Get the final image
-    image_results = draw_bounding_boxes(
-        image=image_w_mask, boxes=bboxes, labels=scores)
+    image_results = draw_bounding_boxes(image=image_w_mask, boxes=bboxes, labels=scores)
 
     return image_results
 
@@ -299,19 +316,19 @@ class LoggiPackageDataset(Dataset):
 
         # Load JSON file in the data directory
         if self.training:
-            json_file = os.path.join(
-                self.data_dir, "challenge", "train_challenge.json")
+            json_file = os.path.join(self.data_dir, "challenge", "train_challenge.json")
             self.imgs_path = os.path.join(self.data_dir, "processed", "train")
             self.masks_path = os.path.join(self.data_dir, "masks", "train")
 
         else:
             json_file = os.path.join(
-                self.data_dir, "json", "challenge", "test_challenge.json")
+                self.data_dir, "json", "challenge", "test_challenge.json"
+            )
             self.imgs_path = os.path.join(self.data_dir, "raw")
             self.masks_path = os.path.join(self.data_dir, "masks", "test")
 
         # Open JSON file
-        with open(json_file, 'r') as j:
+        with open(json_file, "r") as j:
 
             # Load JSON contents
             json_data = json.loads(j.read())
@@ -329,20 +346,26 @@ class LoggiPackageDataset(Dataset):
         # Get image data
         image_fname = self.images[idx]
         img_path = os.path.join(self.imgs_path, image_fname)
-        image = Image.open(img_path).convert('RGB')
+        image = Image.open(img_path).convert("RGB")
         image = np.asarray(image)
 
         # Get annotation data
         # Boxes
-        bboxes = self.label_dict[image_fname]['boxes']
+        bboxes = self.label_dict[image_fname]["boxes"]
 
         # Labels
-        bbox_classes = self.label_dict[image_fname]['labels']
+        bbox_classes = self.label_dict[image_fname]["labels"]
 
         # Masks
-        masks = self.label_dict[image_fname]['masks']
-        masks = [np.asarray(Image.open(os.path.join(
-            self.masks_path, image_fname.split('.')[0], m)).convert("L")) for m in masks]
+        masks = self.label_dict[image_fname]["masks"]
+        masks = [
+            np.asarray(
+                Image.open(
+                    os.path.join(self.masks_path, image_fname.split(".")[0], m)
+                ).convert("L")
+            )
+            for m in masks
+        ]
 
         masks = [(m > int(m.max() / 2)).astype(np.uint8) for m in masks]
 
@@ -354,7 +377,8 @@ class LoggiPackageDataset(Dataset):
 
             # Apply transforms
             transformed = self.transforms(
-                image=image, masks=masks, bboxes=bboxes, bbox_classes=bbox_classes)
+                image=image, masks=masks, bboxes=bboxes, bbox_classes=bbox_classes
+            )
 
             # Get image
             image = transformed["image"]
