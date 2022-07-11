@@ -29,6 +29,22 @@ class LoggiBarcodeDetectionModel(torch.nn.Module):
         self.backbone = backbone
         self.backbone_pretrained = backbone_pretrained
 
+        # Let's make the RPN generate 5 x 3 anchors per spatial location, with 5 different sizes and 3 different aspect ratios
+        # We have a Tuple[Tuple[int]] because each feature map could potentially have different sizes and aspect ratios
+        anchor_generator = AnchorGenerator(
+            sizes=((32, 64, 128, 256, 512),), aspect_ratios=((0.5, 1.0, 2.0),)
+        )
+
+        # Let's define what are the feature maps that we will use to perform the region of interest cropping, as well as the size of the crop after rescaling
+        # If your backbone returns a Tensor, featmap_names is expected to be ['0']
+        # More generally, the backbone should return an OrderedDict[Tensor], and in featmap_names you can choose which feature maps to use
+        roi_pooler = torchvision.ops.MultiScaleRoIAlign(
+            featmap_names=["0"], output_size=7, sampling_ratio=2
+        )
+        mask_roi_pooler = torchvision.ops.MultiScaleRoIAlign(
+            featmap_names=["0"], output_size=14, sampling_ratio=2
+        )
+
         # Select the backbone
         if self.backbone == "mobilenet_v2":
             # Source: https://pytorch.org/vision/stable/_modules/torchvision/models/detection/mask_rcnn.html#maskrcnn_resnet50_fpn
@@ -39,22 +55,6 @@ class LoggiBarcodeDetectionModel(torch.nn.Module):
             # MaskRCNN needs to know the number of output channels in a backbone
             # For mobilenet_v2, it's 1280, so we need to add it here
             backbone_.out_channels = 1280
-
-            # Let's make the RPN generate 5 x 3 anchors per spatial location, with 5 different sizes and 3 different aspect ratios
-            # We have a Tuple[Tuple[int]] because each feature map could potentially have different sizes and aspect ratios
-            anchor_generator = AnchorGenerator(
-                sizes=((32, 64, 128, 256, 512),), aspect_ratios=((0.5, 1.0, 2.0),)
-            )
-
-            # Let's define what are the feature maps that we will use to perform the region of interest cropping, as well as the size of the crop after rescaling
-            # If your backbone returns a Tensor, featmap_names is expected to be ['0']
-            # More generally, the backbone should return an OrderedDict[Tensor], and in featmap_names you can choose which feature maps to use
-            roi_pooler = torchvision.ops.MultiScaleRoIAlign(
-                featmap_names=["0"], output_size=7, sampling_ratio=2
-            )
-            mask_roi_pooler = torchvision.ops.MultiScaleRoIAlign(
-                featmap_names=["0"], output_size=14, sampling_ratio=2
-            )
 
             # Put the pieces together inside a MaskRCNN model
             self.model = MaskRCNN(
@@ -68,7 +68,16 @@ class LoggiBarcodeDetectionModel(torch.nn.Module):
             )
 
         # You can add your backbones here...
-        # elif self.backbone == "your_backbone_name"
+        elif self.backbone == "resnet50":
+            self.model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(
+                weights=torchvision.models.detection.mask_rcnn.MaskRCNN_ResNet50_FPN_V2_Weights.DEFAULT,
+                num_clases=2,
+                weights_backbone=torchvision.models.ResNet50_Weights.IMAGENET1K_V2,
+                min_size=min_img_size,
+                max_size=max_img_size,
+                box_roi_pool=roi_pooler,
+                mask_roi_pool=mask_roi_pooler,
+            )
 
         return
 
