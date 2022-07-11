@@ -113,6 +113,8 @@ def main(args):
 
         # Go through train loader
         for images, targets in tqdm.tqdm(train_loader):
+            # TODO: Check this training loop and grad computation
+            optimizer.zero_grad()
 
             # Load data
             images = [image.to(DEVICE) for image in images]
@@ -135,7 +137,6 @@ def main(args):
             losses_.append(loss_value)
 
             # Optimise models parameters
-            optimizer.zero_grad()
             losses.backward()
             optimizer.step()
 
