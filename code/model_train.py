@@ -19,10 +19,15 @@ torch.manual_seed(42)
 
 
 # Constant variables
-BATCH_SIZE = 1
+BATCH_SIZE = 32
 NUM_EPOCHS = 1
-IMG_SIZE = 1024
+IMG_SIZE = 256
 VAL_MAP_FREQ = 1
+
+# Fix the random crashes due to multiprocessing
+import resource
+rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
 
 # Directories
 DATA_DIR = "data_participants"

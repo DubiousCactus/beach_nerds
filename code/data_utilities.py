@@ -317,6 +317,7 @@ class LoggiPackageDataset(Dataset):
         # Load JSON file in the data directory
         if self.training:
             json_file = os.path.join(self.data_dir, "challenge", "train_challenge.json")
+            # TODO: Load all images in memory
             self.imgs_path = os.path.join(self.data_dir, "processed", "train")
             self.masks_path = os.path.join(self.data_dir, "masks", "train")
 
