@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # vm_train.sh
 # Copyright (C) 2022 Théo Morales <theo.morales.fr@gmail.com>
