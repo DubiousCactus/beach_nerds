@@ -317,38 +317,47 @@ class LoggiPackageDataset(Dataset):
         # Load JSON file in the data directory
         if self.training:
             json_file = os.path.join(self.data_dir, "challenge", "train_challenge.json")
+            # Open JSON file
+            with open(json_file, "r") as j:
+                # Load JSON contents
+                json_data = json.loads(j.read())
+
+            # Create a list with all the images' filenames
             # TODO: Load all images in memory
-            self.imgs_path = os.path.join(self.data_dir, "processed", "train")
+            self.images = self._load_images(os.path.join(self.data_dir, "processed", "train"), list(json_data.keys()))
             self.masks_path = os.path.join(self.data_dir, "masks", "train")
 
         else:
             json_file = os.path.join(
                 self.data_dir, "json", "challenge", "test_challenge.json"
             )
-            self.imgs_path = os.path.join(self.data_dir, "raw")
+            json_file = os.path.join(self.data_dir, "challenge", "train_challenge.json")
+            # Open JSON file
+            with open(json_file, "r") as j:
+                # Load JSON contents
+                json_data = json.loads(j.read())
+
+            # Create a list with all the images' filenames
+            # TODO: Clean up this mess
+            self.images = self._load_images(os.path.join(self.data_dir, "raw"), list(json_data.keys()))
+
             self.masks_path = os.path.join(self.data_dir, "masks", "test")
-
-        # Open JSON file
-        with open(json_file, "r") as j:
-
-            # Load JSON contents
-            json_data = json.loads(j.read())
-
-        # Create a list with all the images' filenames
-        self.images = list(json_data.keys())
 
         # Add the "json_data" variable to the class variables
         self.label_dict = json_data.copy()
+
+    def _load_images(self, path, image_names):
+        images = []
+        for img in image_names:
+            images.append((np.asarray(Image.open(os.path.join(path, img)).convert("RGB")), img))
+        return images
 
     # Method: __getitem__
 
     def __getitem__(self, idx):
 
         # Get image data
-        image_fname = self.images[idx]
-        img_path = os.path.join(self.imgs_path, image_fname)
-        image = Image.open(img_path).convert("RGB")
-        image = np.asarray(image)
+        image, image_fname = self.images[idx]
 
         # Get annotation data
         # Boxes
@@ -358,6 +367,7 @@ class LoggiPackageDataset(Dataset):
         bbox_classes = self.label_dict[image_fname]["labels"]
 
         # Masks
+        # TODO: Preload
         masks = self.label_dict[image_fname]["masks"]
         masks = [
             np.asarray(
