@@ -18,7 +18,7 @@ RUN pip3 install -U albumentations
 RUN pip3 install torchinfo
 RUN pip3 install tqdm
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
-RUN pip3 install pycocotools
+RUN pip3 install pycocotools wandb argparse
 
 
 # Run command to test the participants' model and generate the score

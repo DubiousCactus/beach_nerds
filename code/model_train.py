@@ -13,7 +13,6 @@ import torch.utils.data
 
 # Tensorboard: PyTorch
 from torch.utils.tensorboard import SummaryWriter
-from sklearn.model_selection import KFold
 
 # Project Imports
 from data_utilities import get_transform, collate_fn, LoggiPackageDataset
@@ -96,10 +95,6 @@ def main(args):
         num_workers=4,
         collate_fn=collate_fn,
     )
-
-    k_folds=10
-    # Define the K-fold Cross Validator
-    kfold = KFold(n_splits=k_folds, shuffle=True, random_state=12345)
 
     # Define DEVICE (GPU or CPU)
     DEVICE = (
