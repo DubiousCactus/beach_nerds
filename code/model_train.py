@@ -134,6 +134,9 @@ def main(args):
     elif args.scheduler == "expo":
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.9)
 
+    print(f"[*] Using scheduler {args.scheduler}")
+    print(f"[*] Using optimiser {args.opt}")
+
     # Start the training and validation loops
     for epoch in range(NUM_EPOCHS):
 
