@@ -15,45 +15,41 @@ from model_utilities import LoggiBarcodeDetectionModel, evaluate, visum2022score
 IMG_SIZE = 512
 SAVED_MODEL = os.path.join("results", "models", "visum2022.pt")
 
-# # The DATA_DIR and PREDICTIONS_DIR are important to validate your submission; do not modify these variables
-# DATA_DIR = "data"
+# The DATA_DIR and PREDICTIONS_DIR are important to validate your submission; do not modify these variables
+DATA_DIR = "data"
 PREDICTIONS_DIR = "predictions"
-# DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-# # Create test set and test loader with transforms
-# test_transforms = get_transform(data_augment=False, img_size=IMG_SIZE)
-# test_set = LoggiPackageDataset(
-#     data_dir=DATA_DIR, training=False, transforms=test_transforms
-# )
-# test_loader = DataLoader(test_set, batch_size=4, shuffle=False, collate_fn=collate_fn)
-
-
-# # Load model
-# model = LoggiBarcodeDetectionModel(
-#     min_img_size=IMG_SIZE, max_img_size=IMG_SIZE, backbone_pretrained=False, backbone="resnet50"
-# )
-# checkpoint = torch.load(SAVED_MODEL, map_location=DEVICE)
-# model.load_state_dict(checkpoint["model_state_dict"])
-# model.to(DEVICE)
+# Create test set and test loader with transforms
+test_transforms = get_transform(data_augment=False, img_size=IMG_SIZE)
+test_set = LoggiPackageDataset(
+    data_dir=DATA_DIR, training=False, transforms=test_transforms
+)
+test_loader = DataLoader(test_set, batch_size=4, shuffle=False, collate_fn=collate_fn)
 
 
-# # Get all the metric results on test set
-# eval_results = evaluate(model, test_loader, DEVICE)
+# Load model
+model = LoggiBarcodeDetectionModel(
+    min_img_size=IMG_SIZE, max_img_size=IMG_SIZE, backbone_pretrained=False, backbone="resnet50"
+)
+checkpoint = torch.load(SAVED_MODEL, map_location=DEVICE)
+model.load_state_dict(checkpoint["model_state_dict"])
+model.to(DEVICE)
 
-# # Get the bounding-boxes results (for VISUM2022 Score)
-# bbox_results = eval_results.coco_eval["bbox"]
-# # bbox_map = bbox_results.stats[0]
-# bbox_map = 0.99 # LOL
 
-# # Get the segmentation results (for VISUM2022 Score)
-# segm_results = eval_results.coco_eval["segm"]
-# # segm_map = segm_results.stats[0]
-# segm_map = 0.99
+# Get all the metric results on test set
+eval_results = evaluate(model, test_loader, DEVICE)
 
-# # Compute the VISUM2022 Score
-# # visum_score = visum2022score(bbox_map, segm_map)
-# visum_score = 0.99 # LOL
-bbox_map, segm_map, visum_score = .99, .99, .99
+# Get the bounding-boxes results (for VISUM2022 Score)
+bbox_results = eval_results.coco_eval["bbox"]
+bbox_map = bbox_results.stats[0]
+
+# Get the segmentation results (for VISUM2022 Score)
+segm_results = eval_results.coco_eval["segm"]
+segm_map = segm_results.stats[0]
+
+# Compute the VISUM2022 Score
+visum_score = visum2022score(bbox_map, segm_map)
 
 # Print mAP values
 print(f"Detection mAP: {np.round(bbox_map, 4)}")
