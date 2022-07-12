@@ -26,7 +26,7 @@ def main(args):
     BATCH_SIZE = args.batch_size
     NUM_EPOCHS = args.epochs
     VAL_MAP_FREQ = args.val_every
-    last_score = .0
+    last_score = 0
 
     # Fix the random crashes due to multiprocessing
     if not os.name == "nt":
@@ -229,11 +229,11 @@ def main(args):
                     os.path.join(SAVE_MODEL_DIR, file_name),
                 )
                 last_score = visum_score
-                print("[*] New best loss!")
+                print("[*] New best score!")
                 print(
                     f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, file_name)}"
                 )
-            wandb.log({"val_loss": np.sum(losses_) / len(train_set), "visum_score": visum_score})
+            wandb.log({"visum_score": visum_score})
         if args.scheduler is not None:
             scheduler.step()
 
