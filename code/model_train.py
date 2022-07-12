@@ -128,6 +128,8 @@ def main(args):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, NUM_EPOCHS, 1e-7)
     elif args.scheduler == "expo":
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.9)
+    elif args.scheduler == "step":
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 30, gamma=0.1)
 
     print(f"[*] Using scheduler {args.scheduler}")
     print(f"[*] Using optimiser {args.opt}")
@@ -245,7 +247,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", default=150, type=int)
     parser.add_argument("--opt", default="adamw", type=str, choices=["adamw", "adam", "radam"])
     parser.add_argument("--lr", default=1e-3, type=float)
-    parser.add_argument("--scheduler", default=None, choices=[None, "cosine", "expo"])
+    parser.add_argument("--scheduler", default=None, choices=[None, "cosine", "expo", "step"])
     parser.add_argument("--val_every", default=1, type=int, help="Validate every n epochs")
     parser.add_argument("--img_size", default=232, type=int)
 
