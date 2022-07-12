@@ -184,7 +184,7 @@ def main(args):
         tb.add_scalar("loss/obj", np.sum(losses_objectness) / len(train_set), epoch)
         tb.add_scalar("loss/rpn", np.sum(losses_rpn_box_reg) / len(train_set), epoch)
         tb.add_scalar("loss/total_loss", np.sum(losses_) / len(train_set), epoch)
-        wandb.log({"train_loss", loss})
+        wandb.log({"train_loss": loss})
 
         if ((epoch + 1) % VAL_MAP_FREQ == 0) or (epoch == NUM_EPOCHS - 1):
             # Validation Phase
@@ -220,8 +220,7 @@ def main(args):
                 print(
                     f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, file_name)}"
                 )
-            wandb.log({"val_loss", np.sum(losses_) / len(train_set)})
-            wandb.log({"visum_score": visum_score})
+            wandb.log({"val_loss": np.sum(losses_) / len(train_set), "visum_score": visum_score})
 
     print("Finished.")
 
