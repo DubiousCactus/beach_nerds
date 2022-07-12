@@ -264,9 +264,20 @@ def get_transform(data_augment, img_size):
 
     if data_augment:
         transforms = A.Compose(
-            [A.HorizontalFlip(p=0.5), A.Resize(img_size, img_size)],
+            [
+                A.RandomRotate90(p=0.5),
+                A.VerticalFlip(p=0.5),
+                A.HorizontalFlip(p=0.5),
+                A.RandomBrightnessContrast(p=0.2),
+                A.PixelDropout(),
+                A.RandomCrop(
+                    width=int(0.8 * img_size), height=int(0.8 * img_size), p=0.3
+                ),
+                A.Resize(img_size, img_size),
+            ],
             bbox_params=A.BboxParams(format="coco", label_fields=["bbox_classes"]),
         )
+        # TODO: Add random blurred rectangles outside the GT boundaries.
 
     else:
         transforms = A.Compose(
@@ -324,7 +335,10 @@ class LoggiPackageDataset(Dataset):
 
             # Create a list with all the images' filenames
             # TODO: Load all images in memory
-            self.images = self._load_images(os.path.join(self.data_dir, "processed", "train"), list(json_data.keys()))
+            self.images = self._load_images(
+                os.path.join(self.data_dir, "processed", "train"),
+                list(json_data.keys()),
+            )
             self.masks_path = os.path.join(self.data_dir, "masks", "train")
 
         else:
@@ -339,7 +353,9 @@ class LoggiPackageDataset(Dataset):
 
             # Create a list with all the images' filenames
             # TODO: Clean up this mess
-            self.images = self._load_images(os.path.join(self.data_dir, "raw"), list(json_data.keys()))
+            self.images = self._load_images(
+                os.path.join(self.data_dir, "raw"), list(json_data.keys())
+            )
 
             self.masks_path = os.path.join(self.data_dir, "masks", "test")
 
@@ -349,7 +365,9 @@ class LoggiPackageDataset(Dataset):
     def _load_images(self, path, image_names):
         images = []
         for img in image_names:
-            images.append((np.asarray(Image.open(os.path.join(path, img)).convert("RGB")), img))
+            images.append(
+                (np.asarray(Image.open(os.path.join(path, img)).convert("RGB")), img)
+            )
         return images
 
     # Method: __getitem__
