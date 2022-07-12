@@ -12,7 +12,7 @@ from model_utilities import LoggiBarcodeDetectionModel, evaluate, visum2022score
 
 
 # Constant variables
-IMG_SIZE = 232
+IMG_SIZE = 512
 SAVED_MODEL = os.path.join("results", "models", "visum2022.pt")
 
 # The DATA_DIR and PREDICTIONS_DIR are important to validate your submission; do not modify these variables
