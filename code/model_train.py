@@ -8,6 +8,7 @@ import numpy as np
 
 # PyTorch Imports
 import torch
+import wandb
 import torch.utils.data
 
 # Tensorboard: PyTorch
@@ -33,6 +34,20 @@ def main(args):
         import resource
         rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
         resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
+
+
+    config = dict (
+      learning_rate = 0.001,
+      architecture = args.backbone,
+      batch_size = args.batch_size,
+      img_size = args.img_size,
+    )
+
+    wandb.init(
+      project="VISUM",
+      notes="Visum 2022",
+      config=config,
+    )
 
     # Directories
     DATA_DIR = "data_participants"
@@ -169,6 +184,7 @@ def main(args):
         tb.add_scalar("loss/obj", np.sum(losses_objectness) / len(train_set), epoch)
         tb.add_scalar("loss/rpn", np.sum(losses_rpn_box_reg) / len(train_set), epoch)
         tb.add_scalar("loss/total_loss", np.sum(losses_) / len(train_set), epoch)
+        wandb.log({"train_loss", loss})
 
         if ((epoch + 1) % VAL_MAP_FREQ == 0) or (epoch == NUM_EPOCHS - 1):
             # Validation Phase
@@ -204,6 +220,8 @@ def main(args):
                 print(
                     f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, file_name)}"
                 )
+            wandb.log({"val_loss", np.sum(losses_) / len(train_set)})
+            wandb.log({"visum_score": visum_score})
 
     print("Finished.")
 
