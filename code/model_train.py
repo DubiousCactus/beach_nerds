@@ -29,10 +29,10 @@ def main(args):
     last_score = .0
 
     # Fix the random crashes due to multiprocessing
-    import resource
-
-    rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
-    resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
+    if not os.name == "nt":
+        import resource
+        rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+        resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
 
     # Directories
     DATA_DIR = "data_participants"
