@@ -349,7 +349,7 @@ class LoggiPackageDataset(Dataset):
                 json_data = json.loads(j.read())
 
             # Create a list with all the images' filenames
-            # TODO: Load all images in memory
+            # Load all images in memory
             self.images = self._load_images(
                 os.path.join(self.data_dir, "processed", "train"),
                 list(json_data.keys()),
@@ -360,14 +360,13 @@ class LoggiPackageDataset(Dataset):
             json_file = os.path.join(
                 self.data_dir, "json", "challenge", "test_challenge.json"
             )
-            json_file = os.path.join(self.data_dir, "challenge", "train_challenge.json")
             # Open JSON file
             with open(json_file, "r") as j:
                 # Load JSON contents
                 json_data = json.loads(j.read())
 
             # Create a list with all the images' filenames
-            # TODO: Clean up this mess
+            # Clean up this mess
             self.images = self._load_images(
                 os.path.join(self.data_dir, "raw"), list(json_data.keys())
             )
