@@ -180,8 +180,6 @@ def main(args):
             # Optimise models parameters
             losses.backward()
             optimizer.step()
-            if args.scheduler is not None:
-                scheduler.step()
 
         # Print loss values
         loss = np.sum(losses_) / len(train_set)
@@ -236,6 +234,8 @@ def main(args):
                     f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, file_name)}"
                 )
             wandb.log({"val_loss": np.sum(losses_) / len(train_set), "visum_score": visum_score})
+        if args.scheduler is not None:
+            scheduler.step()
 
     print("Finished.")
 
