@@ -270,13 +270,13 @@ def get_transform(data_augment, img_size):
                 A.VerticalFlip(p=0.5),
                 A.HorizontalFlip(p=0.5),
                 # A.RandomBrightnessContrast(p=0.2),
-                A.PixelDropout(),
-                A.CropAndPad(
-                    px=224,
-                    p=1.0,
-                    sample_independently=False,
-                    keep_size=True,
-                ),
+                # A.PixelDropout(),
+                # A.CropAndPad(
+                #     px=224,
+                #     p=1.0,
+                #     sample_independently=False,
+                #     keep_size=True,
+                # ),
                 A.Resize(232, 232),
                 A.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
             ],
@@ -287,12 +287,12 @@ def get_transform(data_augment, img_size):
     else:
         transforms = A.Compose(
             [
-                A.CropAndPad(
-                    px=224,
-                    p=1.0,
-                    sample_independently=False,
-                    keep_size=True,
-                ),
+                # A.CropAndPad(
+                #     px=224,
+                #     p=1.0,
+                #     sample_independently=False,
+                #     keep_size=True,
+                # ),
                 A.Resize(232, 232),
                 A.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
             ],
