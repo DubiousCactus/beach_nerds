@@ -125,11 +125,11 @@ def main(args):
         optimizer = torch.optim.SGD(model_params, lr=args.lr)
 
     if args.scheduler == "cosine":
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, NUM_EPOCHS, 1e-7)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, NUM_EPOCHS, 1e-9, verbose=True)
     elif args.scheduler == "expo":
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.9)
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.9, verbose=True)
     elif args.scheduler == "step":
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 30, gamma=0.1)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1, verbose=True)
 
     print(f"[*] Using scheduler {args.scheduler}")
     print(f"[*] Using optimiser {args.opt}")
