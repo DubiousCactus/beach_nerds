@@ -26,7 +26,6 @@ def main(args):
     # Constant variables
     BATCH_SIZE = args.batch_size
     NUM_EPOCHS = args.epochs
-    IMG_SIZE = args.img_size
     VAL_MAP_FREQ = args.val_every
     last_score = .0
 
@@ -41,7 +40,6 @@ def main(args):
       learning_rate = 0.001,
       architecture = args.backbone,
       batch_size = args.batch_size,
-      img_size = args.img_size,
     )
 
     wandb.init(
@@ -65,12 +63,12 @@ def main(args):
     dataset = LoggiPackageDataset(
         data_dir=DATA_DIR,
         training=True,
-        transforms=get_transform(data_augment=True, img_size=IMG_SIZE),
+        transforms=get_transform(data_augment=True, img_size=232),
     )
     dataset_notransforms = LoggiPackageDataset(
         data_dir=DATA_DIR,
         training=True,
-        transforms=get_transform(data_augment=False, img_size=IMG_SIZE),
+        transforms=get_transform(data_augment=False, img_size=232),
     )
 
     # Split the dataset into train and validation sets
@@ -111,7 +109,7 @@ def main(args):
 
     # Define model
     model = LoggiBarcodeDetectionModel(
-        min_img_size=IMG_SIZE, max_img_size=IMG_SIZE, backbone=args.backbone
+        min_img_size=232, max_img_size=232, backbone=args.backbone
     )
 
     # Print model summary
@@ -122,9 +120,19 @@ def main(args):
 
     # Define an optimizer
     model_params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.RAdam(model_params, lr=0.001)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, NUM_EPOCHS, 1e-7)
-    # optimizer = torch.optim.SGD(model_params, lr=0.005, momentum=0.9, weight_decay=0.0005)
+    if args.opt == "radam":
+        optimizer = torch.optim.RAdam(model_params, lr=args.lr)
+    elif args.opt == "adam":
+        optimizer = torch.optim.Adam(model_params, lr=args.lr)
+    elif args.opt == "adamw":
+        optimizer = torch.optim.AdamW(model_params, lr=args.lr)
+    else:
+        optimizer = torch.optim.SGD(model_params, lr=args.lr)
+
+    if args.scheduler == "cosine":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, NUM_EPOCHS, 1e-7)
+    elif args.scheduler == "expo":
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.9)
 
     # Start the training and validation loops
     for epoch in range(NUM_EPOCHS):
@@ -172,7 +180,8 @@ def main(args):
             # Optimise models parameters
             losses.backward()
             optimizer.step()
-            scheduler.step()
+            if args.scheduler is not None:
+                scheduler.step()
 
         # Print loss values
         loss = np.sum(losses_) / len(train_set)
@@ -233,13 +242,13 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("backbone", default="mobilenet_v2", type=str, help="Either mobilenet_v2 or resnet50")
-    parser.add_argument("--batch_size", default=32, type=int)
-    parser.add_argument("--epochs", default=50, type=int)
-    parser.add_argument("--img_size", default=512, type=int)
-    parser.add_argument(
-        "--val_every", default=1, type=int, help="Validate every n epochs"
-    )
+    parser.add_argument("backbone", default="mobilenet_v2", type=str, help="Either mobilenet_v2 or resnet50", choices=["mobilenet_v2", "mobilenet_v3", "resnet50"])
+    parser.add_argument("--batch_size", default=9, type=int)
+    parser.add_argument("--epochs", default=150, type=int)
+    parser.add_argument("--opt", default="adamw", type=str, choices=["adamw", "adam", "radam"])
+    parser.add_argument("--lr", default=1e-3, type=float)
+    parser.add_argument("--scheduler", default=None, choices=[None, "cosine", "expo"])
+    parser.add_argument("--val_every", default=1, type=int, help="Validate every n epochs")
 
     args = parser.parse_args()
     main(args)
