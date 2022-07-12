@@ -95,7 +95,6 @@ class LoggiBarcodeDetectionModel(torch.nn.Module):
         # Compute outputs
         if targets and self.training:
             outputs = self.model(inputs, targets)
-            print(outputs)
         else:
             outputs = self.model(inputs)
 
