@@ -78,7 +78,16 @@ class LoggiBarcodeDetectionModel(torch.nn.Module):
                 box_roi_pool=roi_pooler,
                 mask_roi_pool=mask_roi_pooler,
             )
-
+        elif self.backbone == "mobilenet_v3":
+            self.model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(
+                weights=torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.DEFAULT,
+                num_clases=2,
+                weights_backbone=torchvision.models.MobileNet_V3_Large_Weights.IMAGENET1K_V2,
+                min_size=min_img_size,
+                max_size=max_img_size,
+                box_roi_pool=roi_pooler,
+                mask_roi_pool=mask_roi_pooler,
+            )
         return
 
     def forward(self, inputs, targets=None):
@@ -86,6 +95,7 @@ class LoggiBarcodeDetectionModel(torch.nn.Module):
         # Compute outputs
         if targets and self.training:
             outputs = self.model(inputs, targets)
+            print(outputs)
         else:
             outputs = self.model(inputs)
 
