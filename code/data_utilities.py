@@ -271,13 +271,14 @@ def get_transform(data_augment, img_size):
                 A.HorizontalFlip(p=0.5),
                 # A.RandomBrightnessContrast(p=0.2),
                 A.PixelDropout(),
-                # A.CropAndPad(
-                #     percent=[-0.05, -0.2],
-                #     p=0.5,
-                #     sample_independently=False,
-                #     keep_size=True,
-                # ),
-                # A.Resize(img_size, img_size),
+                A.CropAndPad(
+                    px=224,
+                    p=1.0,
+                    sample_independently=False,
+                    keep_size=True,
+                ),
+                A.Resize(232, 232),
+                A.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
             ],
             bbox_params=A.BboxParams(format="coco", label_fields=["bbox_classes"]),
         )
@@ -285,7 +286,16 @@ def get_transform(data_augment, img_size):
 
     else:
         transforms = A.Compose(
-            [A.Resize(img_size, img_size)],
+            [
+                A.CropAndPad(
+                    px=224,
+                    p=1.0,
+                    sample_independently=False,
+                    keep_size=True,
+                ),
+                A.Resize(232, 232),
+                A.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ],
             bbox_params=A.BboxParams(format="coco", label_fields=["bbox_classes"]),
         )
 
@@ -404,6 +414,7 @@ class LoggiPackageDataset(Dataset):
         masks = [(m > int(m.max() / 2)).astype(np.uint8) for m in masks]
 
         # Apply transforms to both image and target
+        # TODO: Make sure the test images are always transformed with the non-aug one!!
         if self.transforms:
 
             # We have to convert all the bounding boxes to COCO notation before augmentation
@@ -430,7 +441,7 @@ class LoggiPackageDataset(Dataset):
 
         # Convert to Tensors
         image = F.to_tensor(image.copy())
-        image = self.resnet50_transforms(image)
+        # image = self.resnet50_transforms(image) WOrks bad because doesn't resize boxes and masks
         masks = torch.as_tensor(np.array(masks), dtype=torch.uint8)
 
         labels = torch.as_tensor(bbox_classes, dtype=torch.int64)

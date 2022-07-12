@@ -66,7 +66,6 @@ class LoggiBarcodeDetectionModel(torch.nn.Module):
                 box_roi_pool=roi_pooler,
                 mask_roi_pool=mask_roi_pooler,
             )
-
         # You can add your backbones here...
         elif self.backbone == "resnet50":
             self.model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(
@@ -79,10 +78,11 @@ class LoggiBarcodeDetectionModel(torch.nn.Module):
                 mask_roi_pool=mask_roi_pooler,
             )
         elif self.backbone == "mobilenet_v3":
-            self.model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(
-                weights=torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.DEFAULT,
+            backbone_ = torchvision.models.mobilenet_v3_large(weights=torchvision.models.MobileNet_V3_Large_Weights.IMAGENET1K_V2)
+            backbone_.out_channels = 1280 * 6
+            self.model = MaskRCNN(
+                backbone_,
                 num_clases=2,
-                weights_backbone=torchvision.models.MobileNet_V3_Large_Weights.IMAGENET1K_V2,
                 min_size=min_img_size,
                 max_size=max_img_size,
                 box_roi_pool=roi_pooler,
