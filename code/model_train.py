@@ -62,12 +62,12 @@ def main(args):
     dataset = LoggiPackageDataset(
         data_dir=DATA_DIR,
         training=True,
-        transforms=get_transform(data_augment=True, img_size=232),
+        transforms=get_transform(data_augment=True, img_size=args.img_size),
     )
     dataset_notransforms = LoggiPackageDataset(
         data_dir=DATA_DIR,
         training=True,
-        transforms=get_transform(data_augment=False, img_size=232),
+        transforms=get_transform(data_augment=False, img_size=args.img_size),
     )
 
     # Split the dataset into train and validation sets
@@ -104,7 +104,7 @@ def main(args):
 
     # Define model
     model = LoggiBarcodeDetectionModel(
-        min_img_size=232, max_img_size=232, backbone=args.backbone
+        min_img_size=args.img_size, max_img_size=args.img_size, backbone=args.backbone
     )
 
     # Print model summary
@@ -247,6 +247,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr", default=1e-3, type=float)
     parser.add_argument("--scheduler", default=None, choices=[None, "cosine", "expo"])
     parser.add_argument("--val_every", default=1, type=int, help="Validate every n epochs")
+    parser.add_argument("--img_size", default=232, type=int)
 
     args = parser.parse_args()
     main(args)
