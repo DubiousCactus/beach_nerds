@@ -270,8 +270,8 @@ def get_transform(data_augment, img_size):
                 A.HorizontalFlip(p=0.5),
                 A.RandomBrightnessContrast(p=0.2),
                 A.PixelDropout(),
-                A.RandomCrop(
-                    width=int(0.8 * img_size), height=int(0.8 * img_size), p=0.3
+                A.CropAndPad(
+                    percent=[-0.05, -0.2], p=0.5
                 ),
                 A.Resize(img_size, img_size),
             ],
