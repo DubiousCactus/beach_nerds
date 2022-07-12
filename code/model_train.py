@@ -47,6 +47,7 @@ def main(args):
       project="VISUM",
       notes="Visum 2022",
       config=config,
+      entity="beach_nerds",
     )
 
     # Directories
