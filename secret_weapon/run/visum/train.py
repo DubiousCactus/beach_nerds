@@ -292,7 +292,6 @@ def main(args):
                     val_loss += losses["loss_cls"] + (alpha * losses["loss_loc"])
                     val_loc_loss += losses["loss_loc"].detach().item()
                     val_cls_loss += losses["loss_cls"].detach().item()
-                    val_loss += sum(losses.values()).detach().item()
                     batches += 1
                 val_loss /= batches
                 val_cls_loss /= batches
