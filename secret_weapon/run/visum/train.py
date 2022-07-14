@@ -239,7 +239,7 @@ def main(args):
     print(f"[*] Using scheduler {args.scheduler}")
     print(f"[*] Using optimiser {args.opt}")
 
-    alpha = 1.0
+    alpha = 0.8
     best_loss = float("+inf")
     for epoch in range(args.epochs):
         print(f"Epoch: {epoch}/{args.epochs}")
