@@ -98,7 +98,7 @@ def main(args):
     batch_size = args.batch_size
     num_workers = os.cpu_count()
     if num_workers is not None:
-        num_workers -= 1
+        num_workers = max(num_workers, 8)
     else:
         num_workers = 4
 
