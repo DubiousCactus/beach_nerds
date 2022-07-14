@@ -118,7 +118,7 @@ def main(args):
     #  ============= Build dataset =========================
     train_aug = Compose(
         [
-            ops.ToFloat(), # Standardizes to [0,1]
+            ops.ToFloat(),  # Standardizes to [0,1]
             # ops.PhotometricDistort(),  # TODO: Move to grayscale and remove
             ops.RandomHFlip(),
             ops.RandomVFlip(),
@@ -273,10 +273,12 @@ def main(args):
                 "train/loc_loss": train_loc_loss,
                 "train/cls_loss": train_cls_loss,
                 "train/total_loss": train_loss,
-                "epoch": epoch,
-            }
+            },
+            step=epoch,
         )
-        print(f"--> Total training loss: {train_loss}")
+        print(
+            f"[*] Training loss={train_loss} (loc={train_loc_loss}, cls={train_cls_loss})"
+        )
 
         # Validation
         if ((epoch + 1) % args.val_every == 0) or (epoch == args.epochs - 1):
@@ -295,9 +297,17 @@ def main(args):
                 val_loss /= batches
                 val_cls_loss /= batches
                 val_loc_loss /= batches
-                wandb.log({f"val/total_loss": val_loss, "epoch": epoch})
-                print(f"--> Total validation loss: {val_loss}")
-                print(f"\t-> loc: {val_loc_loss}\n\t-> cls: {val_cls_loss}")
+                wandb.log(
+                    {
+                        f"val/total_loss": val_loss,
+                        "val/loc_loss": val_loc_loss,
+                        "val/cls_loss": val_cls_loss,
+                    },
+                    step=epoch,
+                )
+                print(
+                    f"[*] Validation loss={val_loss} (loc={val_loc_loss}, cls={val_cls_loss})"
+                )
                 if val_loss < best_loss:
                     print("[*] New best loss!")
                     best_loss = val_loss
