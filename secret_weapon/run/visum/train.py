@@ -257,7 +257,7 @@ def main(args):
 
             optimizer.zero_grad()
             losses = model(images, targets)
-            loss = losses["loss_cls"] + alpha * losses["loss_loc"]
+            loss = losses["loss_cls"] + (alpha * losses["loss_loc"])
             train_loss += loss.detach().item()
             train_loc_loss += losses["loss_loc"].detach().item()
             train_cls_loss += losses["loss_cls"].detach().item()
@@ -271,7 +271,7 @@ def main(args):
         wandb.log(
             {
                 "train/loc_loss": train_loc_loss,
-                "train_cls_loss": train_cls_loss,
+                "train/cls_loss": train_cls_loss,
                 "train/total_loss": train_loss,
                 "epoch": epoch,
             }
@@ -287,10 +287,9 @@ def main(args):
                     # Preprocessing
                     images = images.cuda()
                     losses = model(images, targets)
-                    val_loss += losses["loss_cls"] + alpha * losses["loss_loc"]
+                    val_loss += losses["loss_cls"] + (alpha * losses["loss_loc"])
                     val_loc_loss += losses["loss_loc"].detach().item()
                     val_cls_loss += losses["loss_cls"].detach().item()
-                    print(losses)
                     val_loss += sum(losses.values()).detach().item()
                     batches += 1
                 val_loss /= batches
