@@ -21,7 +21,7 @@ from model_utilities import LoggiBarcodeDetectionModel, evaluate, visum2022score
 
 def main(args):
     # Random seeds
-    torch.manual_seed(42)
+    # torch.manual_seed(42)
     # Constant variables
     BATCH_SIZE = args.batch_size
     NUM_EPOCHS = args.epochs
@@ -72,10 +72,10 @@ def main(args):
 
     # Split the dataset into train and validation sets
     indices = torch.randperm(len(dataset)).tolist()
-    # Train Set: 1000 samples
-    train_set = torch.utils.data.Subset(dataset, indices[:-299])
-    # Validation Set: 299 samples
-    val_set = torch.utils.data.Subset(dataset_notransforms, indices[-299:])
+    # Train Set: 1100 samples
+    train_set = torch.utils.data.Subset(dataset, indices[:-199])
+    # Validation Set: 199 samples
+    val_set = torch.utils.data.Subset(dataset_notransforms, indices[-199:])
 
     # DataLoaders
     # Train loader
@@ -129,7 +129,7 @@ def main(args):
     elif args.scheduler == "expo":
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.9, verbose=True)
     elif args.scheduler == "step":
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5, verbose=True)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5, verbose=True)
 
     print(f"[*] Using scheduler {args.scheduler}")
     print(f"[*] Using optimiser {args.opt}")

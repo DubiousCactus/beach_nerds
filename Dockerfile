@@ -20,6 +20,7 @@ RUN pip3 install tqdm
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
 RUN pip3 install pycocotools wandb argparse
 
+# TODO: Rest of libs for other method
 
 # Run command to test the participants' model and generate the score
 CMD ["python3", "/code/model_test.py"]
