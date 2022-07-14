@@ -72,10 +72,13 @@ def main(args):
 
     # Split the dataset into train and validation sets
     indices = torch.randperm(len(dataset)).tolist()
+    train_pct, n_samples = 0.9, len(indices)
+    n_train = int(train_pct * n_samples)
+    n_val = n_samples - n_train
     # Train Set: 1100 samples
-    train_set = torch.utils.data.Subset(dataset, indices[:-199])
+    train_set = torch.utils.data.Subset(dataset, indices[:n_train])
     # Validation Set: 199 samples
-    val_set = torch.utils.data.Subset(dataset_notransforms, indices[-199:])
+    val_set = torch.utils.data.Subset(dataset_notransforms, indices[n_train:])
 
     # DataLoaders
     # Train loader
@@ -197,7 +200,7 @@ def main(args):
         tb.add_scalar("loss/obj", np.sum(losses_objectness) / len(train_set), epoch)
         tb.add_scalar("loss/rpn", np.sum(losses_rpn_box_reg) / len(train_set), epoch)
         tb.add_scalar("loss/total_loss", np.sum(losses_) / len(train_set), epoch)
-        wandb.log({"train_loss": loss})
+        wandb.log({"train_loss": loss}, step=epoch)
 
         if ((epoch + 1) % VAL_MAP_FREQ == 0) or (epoch == NUM_EPOCHS - 1):
             # Validation Phase
@@ -233,7 +236,7 @@ def main(args):
                 print(
                     f"Model successfully saved at {os.path.join(SAVE_MODEL_DIR, file_name)}"
                 )
-            wandb.log({"visum_score": visum_score})
+            wandb.log({"visum_score": visum_score}, step=epoch)
         if args.scheduler is not None:
             scheduler.step()
 
