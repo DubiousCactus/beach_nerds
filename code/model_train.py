@@ -170,6 +170,7 @@ def main(args):
             # Compute loss
             loss_dict = model(images, targets_)
             losses = sum(loss for loss in loss_dict.values())
+            # TODO: Add more weight to the mask loss?
             loss_value = losses.item()
 
             # Save loss values

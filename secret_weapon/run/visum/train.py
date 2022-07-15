@@ -50,17 +50,25 @@ def evaluate(model, label2name, val_loader, image_size):
                 bboxes = bboxes.cpu().numpy()
                 scores = scores.cpu().numpy()
                 labels = labels.cpu().numpy()
-                fname, x, y, w, h = os.path.splitext(
-                    os.path.basename(info["img_path"])
-                )[0].split("-")[:5]
-                x, y, w, h = int(x), int(y), int(w), int(h)
-                long_edge = max(w, h)
-                pad_x, pad_y = (long_edge - w) // 2, (long_edge - h) // 2
-                bboxes = np.stack([xywha2xy4(bbox) for bbox in bboxes])
-                bboxes *= long_edge / image_size
-                bboxes -= [pad_x, pad_y]
-                bboxes += [x, y]
-                bboxes = np.stack([xy42xywha(bbox) for bbox in bboxes])
+                fname = os.path.split(info["img_path"])[-1]
+
+                # TODO: Make sure the predictions match the resolution of the test data!!
+                #       I think it should be fine because we are given the test data, so
+                #       when we resize it, we resize the labels as well.
+
+                # TODO: Figure out this padding stuff!
+
+                # fname, x, y, w, h = os.path.splitext(
+                #     os.path.basename(info["img_path"])
+                # )[0].split("-")[:5]
+                # x, y, w, h = int(x), int(y), int(w), int(h)
+                # long_edge = max(w, h)
+                # pad_x, pad_y = (long_edge - w) // 2, (long_edge - h) // 2
+                # bboxes = np.stack([xywha2xy4(bbox) for bbox in bboxes])
+                # bboxes *= long_edge / image_size
+                # bboxes -= [pad_x, pad_y]
+                # bboxes += [x, y]
+                # bboxes = np.stack([xy42xywha(bbox) for bbox in bboxes])
                 ret_raw[fname].append([bboxes, scores, labels])
 
     print("merging results...")
@@ -86,6 +94,18 @@ def evaluate(model, label2name, val_loader, image_size):
                 *bbox,
             )
             ret_save[label2name[label]].append(line)
+            # TODO: compute bounding box of rotated rect (easy with opencv)
+            # TODO: compute segmentation mask from rotated rect (coordinates?)
+            # TODO: bundle together in COCO format, as such:
+            # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+
+            # res = {
+            #     target["image_id"].item(): output
+            #     for target, output in zip(targets, outputs)
+            # }
+            # coco_evaluator.update(res)
+
+
 
 
 def main(args):
@@ -118,9 +138,9 @@ def main(args):
             # ops.PhotometricDistort(),  # TODO: Move to grayscale and remove
             ops.RandomHFlip(),
             ops.RandomVFlip(),
-            ops.RandomRotate90(),
-            # ops.ResizeJitter([0.8, 1.2]),
-            # ops.PadSquare(),
+            ops.RandomRotate(),
+            ops.ResizeJitter([0.8, 1.2]),
+            ops.PadSquare(),
             # ops.Normalize(
             #     [51.61898139, 51.61898139, 51.61898139],
             #     [50.11639468, 50.11639468, 50.11639468],
@@ -239,7 +259,7 @@ def main(args):
     print(f"[*] Using scheduler {args.scheduler}")
     print(f"[*] Using optimiser {args.opt}")
 
-    alpha = 0.8
+    alpha = 0.6
     best_loss = float("+inf")
     for epoch in range(args.epochs):
         print(f"Epoch: {epoch}/{args.epochs}")
