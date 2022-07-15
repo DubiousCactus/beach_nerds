@@ -110,10 +110,10 @@ class DetDataset(Dataset):
         # import matplotlib.pyplot as plt
         # import cv2
         # for obj in objs['bboxes']:
-        # obj = np.int0(obj)
-        # print(obj)
-        # print(len(obj))
-        # cv2.drawContours(img, [obj], 0, (0,255,0))
+            # obj = np.int0(obj)
+            # print(obj)
+            # print(len(obj))
+            # cv2.drawContours(img, [obj], 0, (0,255,0))
         # plt.figure()
         # plt.imshow(img)
         # plt.show()

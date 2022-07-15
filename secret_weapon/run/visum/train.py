@@ -128,7 +128,7 @@ def main(args):
     val_loader = DataLoader(
         val_set,
         batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=num_workers,
         pin_memory=True,
         drop_last=True,
