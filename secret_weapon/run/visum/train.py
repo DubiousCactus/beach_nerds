@@ -171,8 +171,8 @@ def main(args):
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     elif args.opt == "adamw":
         optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    else:
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
+    elif args.opt == "sgd":
+        optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 
     if args.scheduler == "cosine":
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=8, type=int)
     parser.add_argument("--epochs", default=150, type=int)
     parser.add_argument(
-        "--opt", default="radam", type=str, choices=["adamw", "adam", "radam"]
+        "--opt", default="radam", type=str, choices=["adamw", "adam", "radam", "sgd"]
     )
     parser.add_argument("--lr", default=1e-3, type=float)
     parser.add_argument(
@@ -288,7 +288,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--val_every", default=1, type=int, help="Validate every n epochs"
     )
-    parser.add_argument("--img_size", default=512, type=int)
+    parser.add_argument("--img_size", default=768, type=int)
 
     args = parser.parse_args()
     main(args)
