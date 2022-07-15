@@ -64,6 +64,8 @@ class DetDataset(Dataset):
                     {
                         "rotated_rect": img_label[0],
                         "bbox": img_label[1],
+                        "nr_bbox": None,
+                        "area": None,
                         "name": "barcode",
                     }
                     for img_label in bbox_labels[img]
@@ -71,16 +73,43 @@ class DetDataset(Dataset):
                 labels.append(img_labels)
         else:
             raise NotImplementedError()
+            img_list = json_file.keys()
+            for img in tqdm(img_list):
+                img_path = os.path.join(imgs_path, img)
+                images.append(
+                    # (np.asarray(Image.open(os.path.join(imgs_path, img)).convert("RGB")), img)
+                    (img_path, imread(img_path, self.color_space))
+                )
+                # masks = torch.as_tensor(np.array(masks), dtype=torch.uint8)
+                img_labels = [
+                    {
+                        "boxes": img_label["boxes"],
+                        "area": (img_label[2][3] - img_label[2][1])
+                                * (img_label[2][2] - img_label[2][0]),
+                    }
+                    for img_label in json_file[img]
+                ]
+                labels.append(img_labels)
         return images, labels
 
     @staticmethod
     def load_objs(gt_list, name2label=None):
+        nr_bboxes = [
+            gt["nr_bbox"] for gt in gt_list
+        ]  # "Original" bbox (horizontally aligned)
         bboxes = [gt["bbox"] for gt in gt_list]  # DOTA format: x1 y1 x2 y2 x3 y3 x4 y4
+        areas = [gt["area"] for gt in gt_list]
         labels = [
             name2label[gt["name"]] if name2label else gt["name"] for gt in gt_list
         ]
+        # Assume all instances are not crowd
+        n_objs = len(bboxes)
+        iscrowd = torch.zeros((n_objs,), dtype=torch.int64)
         objs = {
+            "non_r_bboxes": np.array(nr_bboxes, dtype=np.float32),
             "bboxes": np.array(bboxes, dtype=np.float32),
+            "areas": np.array(areas, dtype=np.float32),
+            "iscrowd": iscrowd,
             "labels": np.array(labels),
         }
         return objs
@@ -99,16 +128,21 @@ class DetDataset(Dataset):
     def __getitem__(self, index):
         (img_path, img), gt = self._images[index], self._labels[index]
         objs = self.load_objs(gt, self.name2label)
-        info = {"img_path": img_path, "shape": img.shape, "objs": objs}
+        info = {
+            "img_path": img_path,
+            "image_id": torch.tensor([index]),
+            "shape": img.shape,
+            "objs": objs,
+        }
         if self.aug is not None:
             img, objs = self.aug(img, deepcopy(objs))
-        # import matplotlib.pyplot as plt 
+        # import matplotlib.pyplot as plt
         # import cv2
         # for obj in objs['bboxes']:
-            # obj = np.int0(obj)
-            # print(obj)
-            # print(len(obj))
-            # cv2.drawContours(img, [obj], 0, (0,255,0))
+        # obj = np.int0(obj)
+        # print(obj)
+        # print(len(obj))
+        # cv2.drawContours(img, [obj], 0, (0,255,0))
         # plt.figure()
         # plt.imshow(img)
         # plt.show()

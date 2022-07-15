@@ -30,7 +30,7 @@ class RDD(xnn.Module):
 
         cfg.setdefault('conf_thresh', 0.01)
         cfg.setdefault('nms_thresh', 0.5)
-        cfg.setdefault('top_n', None)
+        cfg.setdefault('top_n', 20)
 
         cfg.setdefault('extra', 0)
         cfg.setdefault('fpn_plane', 256)
@@ -67,7 +67,7 @@ class RDD(xnn.Module):
         self.backbone.init()
 
     def restore(self, path):
-        weight = torch.load(path)
+        weight = torch.load(path)["model_state_dict"]
         self.load_state_dict(weight, strict=True)
 
     def forward(self, images, targets=None):

@@ -15,6 +15,7 @@ sys.path.append(".")
 import os
 import cv2
 import tqdm
+import torch
 import argparse
 import numpy as np
 
@@ -24,6 +25,7 @@ from torch.utils.data import DataLoader
 from dataset.aug import ops
 from dataset import DetDataset
 from dataset.aug.compose import Compose
+from dataset.data_utilities import LoggiPackageDataset, get_transform, collate_fn
 
 from model.rdd import RDD
 from model.backbone import resnet
@@ -31,21 +33,44 @@ from model.backbone import resnet
 from utils.box.rbbox_np import rbbox_batched_nms
 from utils.box.bbox_np import xy42xywha, xywha2xy4
 
+from utils.coco_eval import CocoEvaluator, convert_to_coco_api
 
-def evaluate(model, label2name, val_loader, image_size):
+
+DATA_DIR="data"
+PREDICTIONS_DIR="predictions"
+
+# Function: Compute VISUM 2022 Competition Metric
+def visum2022score(bboxes_mAP, masks_mAP, bboxes_mAP_weight=0.5):
+
+    # Compute masks_mAP_weight from bboxes_mAP_weight
+    masks_mAP_weight = 1 - bboxes_mAP_weight
+
+    # Compute score, i.e., score = 0.5*bboxes_mAP + 0.5*masks_mAP
+    score = (bboxes_mAP_weight * bboxes_mAP) + (masks_mAP_weight * masks_mAP)
+
+    return score
+
+def evaluate(model, val_loader, img_size):
+    n_threads = torch.get_num_threads()
+    torch.set_num_threads(1)
+    coco = convert_to_coco_api(val_loader.dataset)
+    iou_types = ["bbox", "segm"]
+    coco_evaluator = CocoEvaluator(coco, iou_types)
     model.eval()
     ret_raw = defaultdict(list)
     nms_thresh = 0.45
-    for images, targets, infos in tqdm.tqdm(val_loader):
+    for images, targets in tqdm.tqdm(val_loader):
         # Preprocessing
-        dets = model(images, targets)
-        for (det, info) in zip(dets, infos):
+        # TODO: cpu!!
+        images = torch.stack([img.cuda() for img in images], dim=0)
+        dets = model(images)
+        for det, targets in zip(dets, targets):
             if det:
                 bboxes, scores, labels = det
                 bboxes = bboxes.cpu().numpy()
                 scores = scores.cpu().numpy()
                 labels = labels.cpu().numpy()
-                fname = os.path.split(info["img_path"])[-1]
+                fname = (targets["image_id"].item(), targets["image_fname"])
 
                 # TODO: Make sure the predictions match the resolution of the test data!!
                 #       I think it should be fine because we are given the test data, so
@@ -81,77 +106,67 @@ def evaluate(model, label2name, val_loader, image_size):
     ret_raw = defaultdict(list)
     ret_save = defaultdict(list)
     for fname, (bboxes, scores, labels) in ret:
+        outputs = {"boxes": [], "labels": [], "scores": [], "masks": []}
         for bbox, score, label in zip(bboxes, scores, labels):
             bbox = xywha2xy4(bbox).ravel()
             line = "%s %.12f %.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f" % (
-                fname,
+                fname[1],
                 score,
                 *bbox,
             )
-            print(line)
-            ret_save[label2name[label]].append(line)
+            # print(line)
+            ret_save[label].append(line)
             # TODO: compute bounding box of rotated rect (easy with opencv)
-            print("Rotated rect: ", np.int0(bbox))
             int_rect = np.int0(bbox)
-            bbox = cv2.boundingRect(int_rect) # x, y, w, h
-            print("Bounding box: ", bbox)
-            break
-            # TODO: compute segmentation mask from rotated rect (coordinates?)
-            # TODO: bundle together in COCO format, as such:
-            # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+            corners = np.array([[int_rect[0], int_rect[1]], [int_rect[2], int_rect[3]],
+                [int_rect[4], int_rect[5]], [int_rect[6], int_rect[7]]])
+            xmin, ymin, w, h = cv2.boundingRect(corners) # x, y, w, h
+            # convert to xmin, ymin, xmax, ymax
+            # ACTUALLY, coco uses the same format as opencv!
+            # bbox = np.array([xmin, ymin, xmin+w, ymin+h])
+            # compute segmentation mask from rotated rect
+            mask = np.zeros((img_size, img_size), dtype=np.uint8)
+            cv2.fillPoly(mask, [corners], color=255)
+            mask = np.expand_dims(mask, axis=0)
+            mask =np.swapaxes(mask, 0, 2)
+            # import matplotlib.pyplot as plt
+            # plt.figure()
+            # plt.imshow(mask)
+            # plt.show()
+            # bundle together in COCO format, as such:
+            outputs['boxes'].append(np.array([xmin, ymin, w, h]))
+            outputs['labels'].append(label)
+            outputs['masks'].append(mask)
+            outputs['scores'].append(score)
+        outputs = {k: torch.tensor(np.array(v)) for k, v in outputs.items()}
+        res = {fname[0]: outputs}
+        coco_evaluator.update(res)
+    coco_evaluator.synchronize_between_processes()
 
-            # res = {
-            #     target["image_id"].item(): output
-            #     for target, output in zip(targets, outputs)
-            # }
-            # coco_evaluator.update(res)
-
-    return 0, 0
-
-
+    # accumulate predictions from all images
+    coco_evaluator.accumulate()
+    coco_evaluator.summarize()
+    torch.set_num_threads(n_threads)
+    return coco_evaluator
 
 
 def main(args):
-    dir_dataset = "../data_participants"
     image_size = args.img_size
     batch_size = 1
-    num_workers = 4
+    num_workers = 8
 
     #  ============= Build dataset =========================
-    aug = Compose(
-        [
-            ops.ToFloat(),
-            # ops.PadSquare(),
-            # ops.Normalize(
-            #     [51.61898139, 51.61898139, 51.61898139],
-            #     [50.11639468, 50.11639468, 50.11639468],
-            # ),  # Our dataset
-            ops.Normalize(
-                [0.20242738, 0.20242738, 0.20242738],
-                [0.19653489, 0.19653489, 0.19653489],
-            ),  # Our dataset [0, 1]
-            # ops.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),  # ImageNet
-            ops.Resize(image_size),
-        ]
+    test_transforms = get_transform(data_augment=False, img_size=image_size)
+    test_set = LoggiPackageDataset(
+        data_dir=DATA_DIR, training=False, transforms=test_transforms
     )
-    # TODO: Switch to test data
-    dataset = DetDataset(
-        dir_dataset, "trainval", ["barcode"], aug=aug, color_space="RGB"
-    )
+    # TODO: Remove
     import torch
-    indices = torch.randperm(len(dataset)).tolist()
-    test_set = torch.utils.data.Subset(dataset, indices[:5])
+    indices = torch.randperm(len(test_set)).tolist()
+    test_set = torch.utils.data.Subset(test_set, indices[:800])
 
-    data_loader = DataLoader(
-        test_set,
-        batch_size,
-        shuffle=True,
-        num_workers=num_workers,
-        pin_memory=True,
-        drop_last=True,
-        collate_fn=dataset.collate,
-    )
-    num_classes = len(dataset.names)
+    test_loader = DataLoader(test_set, batch_size=batch_size, num_workers=num_workers, shuffle=False, collate_fn=collate_fn)
+    num_classes = 1
 
     # ===================== Build model ==============================
     prior_box = {
@@ -175,10 +190,31 @@ def main(args):
         raise NotImplementedError(f"No implementation for backbone {args.backbone}")
     model = RDD(backbone(fetch_feature=True, pretrained=False), cfg)
     model.build_pipe(shape=[2, 3, image_size, image_size])
-    # TODO: Load state dict!
-    model.init()
-    map, mseg = evaluate(model, dataset.label2name, data_loader, image_size)
+    model.restore("tsar2.pt")
+    model.cuda()
 
+    eval_results = evaluate(model, test_loader, image_size)
+
+    # Get the bounding-boxes results (for VISUM2022 Score)
+    bbox_results = eval_results.coco_eval["bbox"]
+    bbox_map = bbox_results.stats[0]
+
+    # Get the segmentation results (for VISUM2022 Score)
+    segm_results = eval_results.coco_eval["segm"]
+    segm_map = segm_results.stats[0]
+
+    # Compute the VISUM2022 Score
+    visum_score = visum2022score(bbox_map, segm_map)
+
+    # Print mAP values
+    print(f"Detection mAP: {np.round(bbox_map, 4)}")
+    print(f"Segmentation mAP: {np.round(segm_map, 4)}")
+    print(f"VISUM Score: {np.round(visum_score, 4)}")
+
+
+    # Save visum_score into a metric.txt file in the PREDICTIONS_DIR
+    with open(os.path.join(PREDICTIONS_DIR, "metric.txt"), "w") as m:
+        m.write(f"{visum_score}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

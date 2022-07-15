@@ -20,7 +20,8 @@ RUN pip3 install --no-cache-dir torch torchvision torchaudio --extra-index-url h
 # Rest of libs for the secret weapon
 RUN pip3 install opencv-python cython pillow
 RUN cd /secret_weapon/utils/box/ext/rbbox_overlap_cpu && rm -rf rbbox_overlap_cpu *.so *.cpp && python3 setup.py build_ext --inplace && cp rbbox_overlap_cpu/* .
-
+#RUN cd /code &&  ./scripts/masks_to_coord.py data/json/challenge/test_challenge.json data/masks data/json/challenge/test_box_labels.npy --test
+RUN ln -s /code/data /secret_weapon/data
 WORKDIR /secret_weapon
 
 # Run command to test the participants' model and generate the score

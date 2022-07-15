@@ -135,11 +135,14 @@ def evaluate(model, data_loader, device):
         outputs = model(images)
 
         outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+        print("OUT", outputs)
 
         res = {
             target["image_id"].item(): output
             for target, output in zip(targets, outputs)
         }
+        print("RES", res)
+        break
         coco_evaluator.update(res)
 
     coco_evaluator.synchronize_between_processes()

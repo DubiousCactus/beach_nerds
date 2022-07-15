@@ -296,7 +296,7 @@ def get_transform(data_augment, img_size):
                 #     keep_size=True,
                 # ),
                 A.Resize(img_size, img_size),
-                A.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+                A.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]), # ImageNet, for old method
             ],
             bbox_params=A.BboxParams(format="coco", label_fields=["bbox_classes"]),
         )
