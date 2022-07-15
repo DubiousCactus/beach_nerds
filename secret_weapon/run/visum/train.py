@@ -36,77 +36,6 @@ from utils.box.bbox_np import xy42xywha, xywha2xy4
 from utils.parallel import convert_model, CustomDetDataParallel
 
 
-def evaluate(model, label2name, val_loader, image_size):
-    model.eval()
-    ret_raw = defaultdict(list)
-    nms_thresh = 0.45
-    for images, targets, infos in tqdm.tqdm(val_loader):
-        # Preprocessing
-        images = images.cuda()
-        dets = model(images, targets)
-        for (det, info) in zip(dets, infos):
-            if det:
-                bboxes, scores, labels = det
-                bboxes = bboxes.cpu().numpy()
-                scores = scores.cpu().numpy()
-                labels = labels.cpu().numpy()
-                fname = os.path.split(info["img_path"])[-1]
-
-                # TODO: Make sure the predictions match the resolution of the test data!!
-                #       I think it should be fine because we are given the test data, so
-                #       when we resize it, we resize the labels as well.
-
-                # TODO: Figure out this padding stuff!
-
-                # fname, x, y, w, h = os.path.splitext(
-                #     os.path.basename(info["img_path"])
-                # )[0].split("-")[:5]
-                # x, y, w, h = int(x), int(y), int(w), int(h)
-                # long_edge = max(w, h)
-                # pad_x, pad_y = (long_edge - w) // 2, (long_edge - h) // 2
-                # bboxes = np.stack([xywha2xy4(bbox) for bbox in bboxes])
-                # bboxes *= long_edge / image_size
-                # bboxes -= [pad_x, pad_y]
-                # bboxes += [x, y]
-                # bboxes = np.stack([xy42xywha(bbox) for bbox in bboxes])
-                ret_raw[fname].append([bboxes, scores, labels])
-
-    print("merging results...")
-    ret = []
-
-    for fname, dets in ret_raw.items():
-        bboxes, scores, labels = zip(*dets)
-        bboxes = np.concatenate(list(bboxes))
-        scores = np.concatenate(list(scores))
-        labels = np.concatenate(list(labels))
-        keeps = rbbox_batched_nms(bboxes, scores, labels, nms_thresh)
-        ret.append([fname, [bboxes[keeps], scores[keeps], labels[keeps]]])
-
-    print("converting to submission format...")
-    ret_raw = defaultdict(list)
-    ret_save = defaultdict(list)
-    for fname, (bboxes, scores, labels) in ret:
-        for bbox, score, label in zip(bboxes, scores, labels):
-            bbox = xywha2xy4(bbox).ravel()
-            line = "%s %.12f %.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f" % (
-                fname,
-                score,
-                *bbox,
-            )
-            ret_save[label2name[label]].append(line)
-            # TODO: compute bounding box of rotated rect (easy with opencv)
-            # TODO: compute segmentation mask from rotated rect (coordinates?)
-            # TODO: bundle together in COCO format, as such:
-            # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-
-            # res = {
-            #     target["image_id"].item(): output
-            #     for target, output in zip(targets, outputs)
-            # }
-            # coco_evaluator.update(res)
-
-
-
 
 def main(args):
     dir_dataset = "../data_participants"
@@ -138,17 +67,17 @@ def main(args):
             # ops.PhotometricDistort(),  # TODO: Move to grayscale and remove
             ops.RandomHFlip(),
             ops.RandomVFlip(),
-            ops.RandomRotate(),
-            ops.ResizeJitter([0.8, 1.2]),
-            ops.PadSquare(),
+            ops.RandomRotate90(),
+            # ops.ResizeJitter([0.8, 1.2]),
+            # ops.PadSquare(),
             # ops.Normalize(
             #     [51.61898139, 51.61898139, 51.61898139],
             #     [50.11639468, 50.11639468, 50.11639468],
             # ),  # Our dataset [0, 255]
-            ops.Normalize(
-                [0.20242738, 0.20242738, 0.20242738],
-                [0.19653489, 0.19653489, 0.19653489],
-            ),  # Our dataset [0, 1]
+            # ops.Normalize(
+            #     [0.20242738, 0.20242738, 0.20242738],
+            #     [0.19653489, 0.19653489, 0.19653489],
+            # ),  # Our dataset [0, 1]
             # ops.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),  # ImageNet
             ops.Resize(image_size),
         ]
@@ -161,10 +90,10 @@ def main(args):
             #     [51.61898139, 51.61898139, 51.61898139],
             #     [50.11639468, 50.11639468, 50.11639468],
             # ),  # Our dataset
-            ops.Normalize(
-                [0.20242738, 0.20242738, 0.20242738],
-                [0.19653489, 0.19653489, 0.19653489],
-            ),  # Our dataset [0, 1]
+            # ops.Normalize(
+            #     [0.20242738, 0.20242738, 0.20242738],
+            #     [0.19653489, 0.19653489, 0.19653489],
+            # ),  # Our dataset [0, 1]
             # ops.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),  # ImageNet
             ops.Resize(image_size),
         ]
