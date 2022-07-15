@@ -34,7 +34,7 @@ br.open(submission_form_url)
 br.select_form(nr=0)
 br["team_name"] = team_name
 br["team_token"] = team_token
-if validate:
+if validate == "y":
     br.find_control("validate_submission").items[0].selected=True
 br.add_file(open(submission_zip, "rb"), content_type="application/octet-stream", filename="submission.zip")
 res = br.submit()
