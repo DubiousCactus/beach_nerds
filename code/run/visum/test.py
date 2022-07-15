@@ -190,7 +190,7 @@ def main(args):
         raise NotImplementedError(f"No implementation for backbone {args.backbone}")
     model = RDD(backbone(fetch_feature=True, pretrained=False), cfg)
     model.build_pipe(shape=[2, 3, image_size, image_size])
-    model.restore("tsar2.pt")
+    model.restore("tsar.pt")
     model.cuda()
 
     eval_results = evaluate(model, test_loader, image_size)
