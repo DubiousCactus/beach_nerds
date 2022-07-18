@@ -116,7 +116,7 @@ def evaluate(model, val_loader, img_size):
                 score,
                 *bbox,
             )
-            # print(line)
+            print(line)
             ret_save[label].append(line)
             # TODO: compute bounding box of rotated rect (easy with opencv)
             int_rect = np.int0(bbox)
@@ -131,10 +131,10 @@ def evaluate(model, val_loader, img_size):
             cv2.fillPoly(mask, [corners], color=255)
             mask = np.expand_dims(mask, axis=0)
             mask =np.swapaxes(mask, 0, 2)
-            # import matplotlib.pyplot as plt
-            # plt.figure()
-            # plt.imshow(mask)
-            # plt.show()
+            import matplotlib.pyplot as plt
+            plt.figure()
+            plt.imshow(mask)
+            plt.show()
             # bundle together in COCO format, as such:
             outputs['boxes'].append(np.array([xmin, ymin, w, h]))
             outputs['labels'].append(label)
@@ -192,7 +192,7 @@ def main(args):
         raise NotImplementedError(f"No implementation for backbone {args.backbone}")
     model = RDD(backbone(fetch_feature=True, pretrained=False), cfg)
     model.build_pipe(shape=[2, 3, image_size, image_size])
-    model.restore("log/tsar.pt")
+    model.restore("tsar.pt")
     model.cuda()
 
     eval_results = evaluate(model, test_loader, image_size)
