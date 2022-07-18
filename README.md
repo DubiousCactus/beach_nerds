@@ -2,4 +2,4 @@
 
 TODO:
 
-[ ] - Write this readme
+- [ ] Write this readme
