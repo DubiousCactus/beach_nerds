@@ -1,5 +1,9 @@
 # VISUM 2022 Project
-Official repository of the Project of the VISUM Summer School 2022.
+Team Beach Nerds' repository of the Project of the VISUM Summer School 2022.
+
+## Info
+
+Check out our branch `tsar` to see our proposed method! The main branch is only the baseline with our improvements.
 
 ## Create a SSH key for GitHub
 First, you should create a SSH key for GitHub. You can go to the official GitHub tutorial [here](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
